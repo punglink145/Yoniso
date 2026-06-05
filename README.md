@@ -17,7 +17,7 @@ YONISO เกิดจาก agent ชอบแก้บั๊กแบบ surfa
 
 | Date / วันที่ | Event / เหตุการณ์ |
 |---------------|---------------------|
-| 02 Jun 2026 | ADR-022 APPROVED (Triad 2-of-3: benz Strategic YES + Quality concur) — 9arm enforcement activated |
+| 02 Jun 2026 | ADR-022 APPROVED (Triad 2-of-3: Strategic YES + Quality concur) — 9arm enforcement activated |
 | 02 Jun 2026 | First yoniso commit — closed root-causes from scheduler audit (`bb56e82`) |
 | 02 Jun 2026 | Yoniso test suite + 7 agent manifests (`5062e84`) |
 | 03 Jun 2026 | 11 code-review-max findings with real YONISO 2-layer RCA (`4e197f1`) |
