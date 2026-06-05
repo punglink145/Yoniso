@@ -7,7 +7,7 @@
 
 ## 📜 ที่มา
 
-YONISO เกิดจาก **R-CORE-007** ใน CLAUDE.md ของ LMA (Local Multi-Agent OS) — agent ชอบแก้บั๊กแบบ surface-level โดยไม่ถามว่า *ทำไมบั๊กถึงเกิดตั้งแต่แรก*
+YONISO เกิดจาก agent ชอบแก้บั๊กแบบ surface-level โดยไม่ถามว่า *ทำไมบั๊กถึงเกิดตั้งแต่แรก*
 
 **Timeline:**
 
