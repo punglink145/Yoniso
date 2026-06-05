@@ -11,7 +11,7 @@
 
 YONISO was born from **R-CORE-007** in the CLAUDE.md of LMA (Local Multi-Agent OS). Agents kept patching surface-level symptoms without asking *why the bug existed in the first place.*
 
-YONISO เกิดจาก **R-CORE-007** ใน CLAUDE.md ของ LMA — agent ชอบแก้บั๊กแบบ surface-level โดยไม่ถามว่า *ทำไมบั๊กถึงเกิดตั้งแต่แรก*
+YONISO เกิดจาก agent ชอบแก้บั๊กแบบ surface-level โดยไม่ถามว่า *ทำไมบั๊กถึงเกิดตั้งแต่แรก*
 
 **Timeline:**
 
