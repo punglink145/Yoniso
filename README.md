@@ -1,147 +1,199 @@
-# YONISO-MANASIKARA v3.0.0
+# YONISO-MANASIKARA v3.1.0
 
-> **โยนิโสมนสิการ** — recursive root questioning discipline.
-> Applied on every fix, plan, review, or architectural decision in Claude Code.
-
-> หลักการตั้งคำถามย้อนกลับ — discipline สำหรับ Claude Code agent ทุกครั้งที่แก้บั๊ก เขียนแผน หรือ review โค้ด
+> Recursive root-cause discipline for Claude Code — classify signals, chain
+> why-layers, fix first, feed back.
+>
+> โยนิโสมนสิการ — หลักการตั้งคำถามย้อนกลับ สำหรับ Claude Code
 
 ---
 
-## 📜 Origin / ที่มา
+## What Problem This Solves
 
-YONISO was born from **R-CORE-007** in the CLAUDE.md of LMA (Local Multi-Agent OS). Agents kept patching surface-level symptoms without asking *why the bug existed in the first place.*
+Claude Code tends to patch surface-level symptoms without asking **why the bug
+existed in the first place.** Yoniso forces signal-based severity
+classification, minimum why-chain depth, layer quality checks, action-first
+fixes, and post-fix feedback — so fixes are root-cause fixes, not symptom
+patches.
 
 YONISO เกิดจาก agent ชอบแก้บั๊กแบบ surface-level โดยไม่ถามว่า *ทำไมบั๊กถึงเกิดตั้งแต่แรก*
 
 **Timeline:**
 
-| Date / วันที่ | Event / เหตุการณ์ |
-|---------------|---------------------|
-| 02 Jun 2026 | ADR-022 APPROVED (Triad 2-of-3: Strategic YES + Quality concur) — 9arm enforcement activated |
-| 02 Jun 2026 | First yoniso commit — closed root-causes from scheduler audit (`bb56e82`) |
-| 02 Jun 2026 | Yoniso test suite + 7 agent manifests (`5062e84`) |
-| 03 Jun 2026 | 11 code-review-max findings with real YONISO 2-layer RCA (`4e197f1`) |
-| 05 Jun 2026 | **v3.0.0** — signal-based auto-classification + 4-point layer quality heuristics + feedback loop (`8a302cc`) |
+| Date | Event |
+|------|-------|
+| 02 Jun 2026 | ADR-022 APPROVED (Triad 2-of-3) — 9arm enforcement activated |
+| 02 Jun 2026 | First yoniso commit — closed root-causes from scheduler audit |
+| 05 Jun 2026 | **v3.0.0** — signal-based auto-classification + 4-point layer quality heuristics |
+| 08 Jun 2026 | **v3.1.0** — production-grade: validator, CI, 22 tests, progressive disclosure |
 
-**DNA:** YONISO is the only **LMA-native** skill among the 5 in the 9ARM bundle. The other 4 (debug-mantra, post-mortem, scrutinize, management-talk) were ported from existing Claude Code skills. YONISO was purpose-built for enforcing recursive root questioning.
-
-YONISO เป็น skill เดียวใน 5 ตัวของ 9ARM bundle ที่เป็น **LMA-native** — ไม่ได้ port มาจาก Claude Code skills เหมือนอีก 4 ตัว สร้างขึ้นมาเพื่อบังคับใช้ recursive root questioning โดยเฉพาะ
+**DNA:** YONISO is the only **LMA-native** skill among the 5 in the 9ARM bundle — purpose-built for enforcing recursive root questioning, not ported from existing skills.
 
 ---
 
-## 🧠 Three-Phase Discipline / หลักการ 3 เฟส
+## When to Use
 
-### Phase 1 — PRE-FIX ASSESS
-
-Classify severity from **observable signals** — not the agent's opinion.
-วัดความรุนแรงจาก **สัญญาณจริง** ไม่ใช่ความคิดเห็นของ agent
-
-| Signal / สัญญาณ | Severity / ความรุนแรง | Min Layers / ชั้นต่ำสุด |
-|------------------|------------------------|--------------------------|
-| Crash, data-loss, auth-bypass, SQLi, RCE | **CRITICAL** | 4 |
-| Wrong output, API break, race condition, >50% perf regression | **HIGH** | 3 |
-| Edge-case, missing validation | **MEDIUM** | 2 |
-| Typo, formatting, rename | **LOW** | 1 |
-
-**Auto-classify always wins over self-report.** If an agent claims "severity = LOW" but signals show CRITICAL → the gate rejects with a discrepancy flag. The agent must justify why signals don't apply.
-
-**Auto-classify ชนะ self-report เสมอ** — ถ้า agent บอก "ไม่รุนแรง" แต่สัญญาณบอก CRITICAL → gate ปฏิเสธ
-
-### Phase 2 — DURING FIX
-
-Chain the "why" layers. Each layer must pass **4 quality heuristics:**
-ไล่ why-chain ตามชั้นที่กำหนด แต่ละชั้นต้องผ่าน **4 กฎคุณภาพ:**
-
-1. **Specific** — names a concrete identifier (function, file:line, variable, config key). Not "there was a sync issue."
-   ระบุชื่อฟังก์ชัน/ไฟล์/บรรทัด (ไม่ใช่ "มันพังเพราะ sync issue")
-2. **Causal** — uses causal language ("because", "which caused", "allowing", "without"). Not correlation.
-   ใช้คำเชื่อมสาเหตุ (เพราะว่า, ซึ่งทำให้, เปิดทางให้)
-3. **Novel** — introduces new information, not a restatement of the layer above.
-   ไม่ใช่แค่พูดซ้ำชั้นก่อนหน้าด้วยคำอื่น
-4. **Actionable** — identifies something that can be changed.
-   บอกสิ่งที่เปลี่ยนแปลงได้จริง
-
-| Layer / ชั้น | Question / คำถาม | Must identify / ต้องระบุ |
-|--------------|-------------------|---------------------------|
-| **L1: Proximate** | What specifically broke? / อะไรพัง? | Function, line, condition that failed / ฟังก์ชัน, บรรทัด, condition ที่ fail |
-| **L2: Systemic** | Why was that breakage possible? / ทำไมถึงพังได้? | Missing guard/contract/test/validation / guard/contract/test/validation ที่หายไป |
-| **L3: Process** | Why did the process allow this? / ทำไม process ถึงปล่อยผ่าน? | CI gap, missing lint rule, missing test category / CI gap, missing lint rule, missing test |
-| **L4: Meta** | Why does the system permit this class? / ทำไมระบบถึงมีช่องโหว่แบบนี้? | Architectural pattern, missing abstraction layer / architectural pattern, missing abstraction |
-
-### Phase 3 — POST-FIX FEEDBACK
-
-After the fix lands: compare predicted vs actual severity. Record any discrepancy in the knowledge base. The next bug of this pattern must use the corrected classification.
-
-หลังแก้ → เทียบ predicted vs actual severity → บันทึก discrepancy ลง knowledge base
+- **Fixing bugs** — classify severity before touching code
+- **Reviewing code** — trace every finding to root cause
+- **Writing plans** — surface assumptions and risk signals
+- **Architecture decisions** — validate why the current architecture allows the
+  problem
+- **Investigating regressions** — why did the previous fix fail?
+- **Security/data-loss incidents** — mandatory 4-layer chain
 
 ---
 
-## 📊 Layer Escalation Matrix / ตารางเพิ่มชั้น
+## Installation
 
-| ID | Signal / สัญญาณ | Min Layers / ชั้นต่ำสุด |
-|----|------------------|--------------------------|
-| E1 | severity = HIGH | 3 |
-| E2 | severity = CRITICAL | 4 |
-| E3 | known_pattern in knowledge base | 3 |
-| E4 | recurrence_count ≥ 1 (same bug returned) | 4 |
-| E5 | security_bug = true (from code surface scan) | 4 |
-| E6 | data_loss_risk = true (from operation patterns) | 4 |
-| E7 | >3 effective files (logic/API/schema only) | 3 |
-| E8 | cross_subsystem = true | 3 |
-
-Multiple triggers → highest layer wins (not additive).
-Multiple triggers → เลือกชั้นสูงสุด (ไม่ใช่บวกกัน)
-
----
-
-## 🔧 v2 → v3: 6 Structural Gaps Closed / 6 จุดอ่อนที่ปิดแล้ว
-
-| # | Gap / จุดอ่อน | v2 | v3 |
-|---|---------------|----|----|
-| 1 | **Self-report trust** | Agent declares its own severity | Signal-based auto-classification |
-| 2 | **Layer quality** | Why-chain not validated | 4-point quality heuristic per layer |
-| 3 | **Signal weakness** | Counted `files_touched` (incl. format/rename) | Change-type classification (logic/API/schema only) |
-| 4 | **Length proxy** | Depth measured by output length | Qualitative shallow-output criteria |
-| 5 | **Timing** | Reactive-only | 3-phase proactive discipline |
-| 6 | **No feedback** | No post-fix verification loop | Post-fix discrepancy audit |
-
----
-
-## 📦 Installation / การติดตั้ง
+### Personal Skill (Recommended)
 
 ```bash
-npx @anthropic-ai/claude-code skills add punglink145/Yoniso
+# Clone into your skills directory
+git clone https://github.com/punglink145/Yoniso ~/.claude/skills/yoniso
 ```
 
-Or manually copy `SKILL.md` to `~/.claude/skills/yoniso/SKILL.md`.
-หรือ copy `SKILL.md` ใส่ `~/.claude/skills/yoniso/SKILL.md` ด้วยตัวเอง
+Then Claude Code auto-loads it when relevant, or invoke with `/yoniso`.
+
+### Project Skill
+
+Copy `SKILL.md` into `.claude/skills/yoniso/` in your project root.
+
+### Direct Invocation
+
+Type `/yoniso` in any Claude Code session.
 
 ---
 
-## 🎮 Usage / วิธีใช้
+## Usage
 
-Type `/yoniso` in any Claude Code session — the skill auto-invokes.
-ใน Claude Code session — `/yoniso` จะ invoke skill อัตโนมัติ
+### Automatic
 
-The skill also fires **proactively** when the agent attempts to:
-หรือ skill จะทำงานเองแบบ proactive เมื่อ agent จะ:
+The skill's description triggers Claude Code to load Yoniso when you ask to:
 
-- Fix a bug / แก้บั๊ก (fix)
-- Write a plan / เขียนแผน (plan)
-- Review code / review โค้ด (review)
-- Make an architectural decision / ตัดสินใจ architectural
+- Fix a bug
+- Review code / PR
+- Write an implementation plan
+- Make an architecture decision
+- Investigate a regression
+- Assess security or data-loss risk
+
+### Direct
+
+```
+/yoniso
+```
+
+Or explicit prompts:
+
+- "Use Yoniso to fix this bug."
+- "Review this PR with Yoniso."
+- "Apply Yoniso before changing this architecture."
 
 ---
 
-## 📁 Files / ไฟล์ใน repo
+## How It Works
 
-| File / ไฟล์ | Purpose / หน้าที่ |
-|-------------|-------------------|
-| `SKILL.md` | Claude Code skill definition — recital + 3-phase decision tree + enforcement rules |
-| `README.md` | This file / ไฟล์นี้ |
+### 3-Phase Discipline
+
+1. **PRE-FIX ASSESS** — classify severity from observable signals (crash, auth,
+   data-loss, API break, race, edge-case). Auto-classify wins over self-report.
+
+2. **DURING-FIX** — chain why-layers to computed depth. Each layer must pass 4
+   quality gates: Specific, Causal, Novel, Actionable.
+
+3. **POST-FIX FEEDBACK** — compare predicted vs actual severity. Record
+   discrepancies. Update pattern knowledge.
+
+### Severity → Depth
+
+| Severity | Min Layers | When |
+|----------|------------|------|
+| LOW | 1 | Typo, format, rename — do not over-analyze |
+| MEDIUM | 2 | Edge-case, missing validation |
+| HIGH | 3 | API break, race condition, perf regression |
+| CRITICAL | 4 | Crash, data-loss, auth bypass, SQLi/RCE |
+| Security / Data-loss / Recurrence | 4 | Always — regardless of apparent severity |
+
+### Output
+
+Every Yoniso output carries the **decision**, not a summary. Action-first.
+Shallow. If you can delete the output without changing what to do next, it
+failed.
+
+For details, see `SKILL.md` and `references/`.
 
 ---
 
-## ⚖️ License
+## What's New in v3.1.0
+
+- **Valid YAML frontmatter** — fixed colon-in-description parse error
+- **Progressive disclosure** — `SKILL.md` is ~170 lines (down from 264);
+  detailed matrices moved to `references/`
+- **References split** — severity signals, why-chain quality, templates,
+  examples, deterministic enforcement
+- **Validator + tests + CI** — `scripts/validate_skill.py`, `tests/`, and
+  `.github/workflows/ci.yml`
+- **Clearer trigger description** — optimized for Claude Code auto-loading
+- **Deterministic enforcement caveat** — documents what the skill CANNOT
+  enforce by prompt alone, with strategies for hooks/CI/checklists
+- **Activation banner** — replaces the wasteful verbatim recital with a short
+  `[yoniso v3.1.0]` banner
+- **Depth proportionality rule** — explicitly warns against over-analyzing LOW
+  and under-analyzing CRITICAL
+
+---
+
+## File Structure
+
+```
+Yoniso/
+├── SKILL.md                              # Claude Code skill definition
+├── README.md                             # This file
+├── LICENSE                               # MIT
+├── references/
+│   ├── severity-signals.md               # Full severity matrix + catalogs
+│   ├── why-chain-quality.md              # 4-gate heuristics + shallow-output
+│   ├── templates.md                      # Copy-paste output templates
+│   ├── examples.md                       # Worked examples (LOW→CRITICAL)
+│   └── deterministic-enforcement.md      # Hooks/CI/validator strategy
+├── scripts/
+│   └── validate_skill.py                 # SKILL.md structural validator
+├── tests/
+│   ├── test_skill_structure.py           # Structural tests
+│   └── test_skill_content.py             # Content tests
+└── .github/workflows/
+    └── ci.yml                            # CI: validator + pytest
+```
+
+---
+
+## Development
+
+### Run Validator
+
+```bash
+python scripts/validate_skill.py
+```
+
+### Run Tests
+
+```bash
+pip install pytest
+python -m pytest -q
+```
+
+---
+
+## License
 
 MIT
+
+---
+
+## Origin / ที่มา
+
+YONISO was born from **R-CORE-007** in the LMA (Local Multi-Agent OS) project.
+Agents kept patching symptoms without asking *why* the bug existed. The skill
+was purpose-built as the only LMA-native discipline in the 9ARM bundle.
+
+Originally part of a private monorepo. Extracted to a standalone skill
+repository so any Claude Code user can install it.
