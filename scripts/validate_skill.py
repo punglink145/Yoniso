@@ -189,10 +189,42 @@ def main() -> int:
             errors.append(f"Referenced file missing: {ref_file}")
 
     # ── No single-line frontmatter regression ────────────────
-    # Single-line frontmatter: starts with "---" and has another "---" on same line
     first_line = lines[0] if lines else ""
     if first_line.startswith("---") and first_line.count("---") >= 2:
         errors.append("Single-line frontmatter detected: '--- ... ---' on one line. Use multi-line format.")
+
+    # ── Exact multiline frontmatter structure ─────────────────
+    if not first_line.startswith("---"):
+        errors.append("line 1 must be exactly '---'")
+
+    closing_idx = None
+    for i in range(1, min(len(lines), 10)):
+        if lines[i].strip() == "---":
+            closing_idx = i
+            break
+    if closing_idx is None:
+        errors.append("closing '---' not found within first 10 lines")
+    elif closing_idx < 4:
+        errors.append(f"frontmatter too short: closing --- at line {closing_idx + 1}, expected >= 4 lines")
+
+    if len(lines) < 2 or not lines[1].strip().startswith("name:"):
+        errors.append("line 2 must start with 'name:'")
+
+    if closing_idx:
+        desc_found = False
+        for i in range(2, closing_idx):
+            stripped = lines[i].strip()
+            if stripped.startswith("description:"):
+                desc_found = True
+                remainder = stripped[len("description:"):].strip()
+                if remainder not in (">-", ">", "|-", "|"):
+                    errors.append(
+                        f"description must use block scalar (e.g. '>-'), "
+                        f"got: '{remainder[:60]}'"
+                    )
+                break
+        if not desc_found:
+            errors.append("description field not found in frontmatter")
 
     # ── Report ───────────────────────────────────────────────
     if warnings:

@@ -126,6 +126,49 @@ class TestRegression:
                 "'--- ... ---' on one line. Use multi-line format."
             )
 
+    def test_frontmatter_is_exactly_multiline(self):
+        """Frontmatter must be multi-line with exact structure:
+        line 1 = '---', line 2 starts with 'name:',
+        description uses block scalar, closing '---' on its own line."""
+        content = read_skill()
+        lines = content.split("\n")
+        assert lines[0] == "---", f"line 1 must be '---', got '{lines[0]}'"
+
+        closing_idx = None
+        for i in range(1, min(len(lines), 10)):
+            if lines[i].strip() == "---":
+                closing_idx = i
+                break
+        assert closing_idx is not None, (
+            "closing '---' not found within first 10 lines"
+        )
+        assert closing_idx >= 4, (
+            f"frontmatter too short: closing --- at line {closing_idx + 1}, "
+            "expected at least 4 lines (---, name, description, ---)"
+        )
+
+        name_line = lines[1].strip()
+        assert name_line.startswith("name:"), (
+            f"line 2 must start with 'name:', got '{name_line[:40]}'"
+        )
+
+        desc_found = False
+        in_desc = False
+        for i in range(2, closing_idx):
+            stripped = lines[i].strip()
+            if stripped.startswith("description:"):
+                desc_found = True
+                remainder = stripped[len("description:"):].strip()
+                assert remainder in (">-", ">", "|-", "|"), (
+                    f"description must use block scalar, "
+                    f"got: '{remainder[:60]}'"
+                )
+                in_desc = True
+            elif in_desc and stripped and not stripped.startswith("#"):
+                pass  # continuation lines of block scalar are fine
+
+        assert desc_found, "description field not found in frontmatter"
+
     def test_no_colon_space_in_unquoted_description(self):
         """Regression: description must use block scalar to avoid
         YAML colon-space mapping errors in unquoted scalars."""
