@@ -9,7 +9,7 @@ description: >-
   feedback. Invoke via /yoniso.
 ---
 
-# YONISO-MANASIKARA v3.1.0
+# YONISO-MANASIKARA v3.3.0
 
 Recursive root questioning — classify signals, chain why-layers through quality
 heuristics, fix first, feed back.
@@ -34,7 +34,7 @@ The result: root cause fixes, not surface patches.
 
 Output a one-line banner, then proceed:
 
-> `[yoniso v3.1.0] signals=[...] severity=[...] layers=[...]`
+> `[yoniso v3.3.0] signals=[...] severity=[...] layers=[...]`
 
 Do NOT recite the full protocol. The banner confirms the discipline is engaged.
 For `/yoniso` direct invocation, the user is asking for the full protocol —
@@ -166,6 +166,8 @@ Required Fix: [concrete change needed]
 Test/Guard Needed: [how to prevent recurrence]
 ```
 
+For multi-file PR reviews, use the severity-weighted breadth workflow — see §9.
+
 ### Depth Proportionality
 
 - **LOW severity:** 1 concrete why + fix is enough. Do NOT over-analyze.
@@ -206,6 +208,23 @@ ship in this repo:
 The severity tables and quality gates in this skill guide Claude's output; the
 tools above enforce them at runtime. For critical systems, combine with
 protected branches and human review. See `references/deterministic-enforcement.md`.
+
+---
+
+## §9. Breadth: PR Review (tier-3)
+
+yoniso is a **depth** discipline for any single turn. For **breadth** — a
+multi-file pull request — pair it with Anthropic's `/code-review` plugin, or
+use the severity-weighted bridge shipped here:
+
+- **`/yoniso-review`** (`commands/yoniso-review.md`) — runs the code-review
+  multi-agent fan-out but filters findings by **severity-weighted confidence**
+  (CRITICAL/security/data-loss ≥ 50, HIGH ≥ 65, MEDIUM ≥ 80, LOW dropped),
+  instead of the flat <80 cutoff. Tags each finding with severity and adds a
+  one-line root cause for CRITICAL/HIGH.
+
+When to use: a PR touching auth / crypto / migrations / data paths / privileges.
+See `references/code-review-bridge.md` for the tier table and decision guide.
 
 ---
 

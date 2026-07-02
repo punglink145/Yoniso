@@ -123,6 +123,23 @@ For details, see `SKILL.md` and `references/`.
 
 ---
 
+## What's New — code-review Bridge (v3.3.0)
+
+yoniso (depth) + Anthropic's `/code-review` (breadth) now compose via a new
+opt-in slash command:
+
+- **`/yoniso-review`** (`commands/yoniso-review.md`) — runs the code-review
+  multi-agent fan-out but filters findings by **severity-weighted confidence**
+  (CRITICAL/security/data-loss ≥ 50, HIGH ≥ 65, MEDIUM ≥ 80, LOW dropped),
+  instead of the flat <80 cutoff. Tags each finding with severity + a one-line
+  root cause for CRITICAL/HIGH.
+- **`references/code-review-bridge.md`** — tier table (T1 depth / T2 breadth
+  vanilla / T3 breadth severity-weighted), when-to-use, token economics.
+
+Install: `cp commands/yoniso-review.md ~/.claude/commands/yoniso-review.md`
+
+---
+
 ## What's New — Runtime Enforcement (v3.2.0)
 
 The skill prompt **guides**; now the repo also **enforces**. New deterministic
@@ -174,7 +191,10 @@ Yoniso/
 │   ├── why-chain-quality.md              # 4-gate heuristics + shallow-output
 │   ├── templates.md                      # Copy-paste output templates
 │   ├── examples.md                       # Worked examples (LOW→CRITICAL)
-│   └── deterministic-enforcement.md      # Hooks/CI/validator strategy
+│   ├── deterministic-enforcement.md      # Hooks/CI/validator strategy
+│   └── code-review-bridge.md             # tier-3 breadth: yoniso × /code-review
+├── commands/
+│   └── yoniso-review.md                  # /yoniso-review slash command (copy to ~/.claude/commands/)
 ├── schemas/
 │   └── yoniso-output.schema.json         # Machine-readable output contract
 ├── scripts/

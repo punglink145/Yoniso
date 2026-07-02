@@ -1,4 +1,4 @@
-# Deterministic Enforcement — Yoniso v3.1.0
+# Deterministic Enforcement — Yoniso v3.3.0
 
 ## What This Skill Can and Cannot Do
 
