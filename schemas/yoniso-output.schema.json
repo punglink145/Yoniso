@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yoniso.dev/schemas/yoniso-output.schema.json",
+  "title": "Yoniso Runtime Output",
+  "description": "Machine-readable contract for a Yoniso assessment. scripts/validate_yoniso_output.py enforces this on the markdown form a model emits. The skill prompt GUIDES; this schema + validator ENFORCE.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["assessment", "signals", "severity", "min_why_layers", "root_cause_chain", "fix_decision", "verification"],
+  "properties": {
+    "assessment": {
+      "type": "string",
+      "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+      "description": "Classified at the HIGHEST matching signal. Auto-classify wins over self-report."
+    },
+    "signals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string"},
+      "description": "Observable evidence (crash/auth/data/API/race/perf/edge-case). NOT a claim."
+    },
+    "severity": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Justification citing the highest-matching signal."
+    },
+    "min_why_layers": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Base 2; HIGH->3; CRITICAL/security/data-loss/recurrence->4 (highest wins, not additive)."
+    },
+    "root_cause_chain": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^L[0-9]+$"},
+          "text": {"type": "string", "minLength": 1}
+        }
+      },
+      "description": "Each layer must pass 4 gates: Specific, Causal, Novel, Actionable."
+    },
+    "fix_decision": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Action-first. Leads with the change, not the explanation."
+    },
+    "verification": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How to confirm the fix works (test/command/observable signal)."
+    },
+    "feedback": {
+      "type": ["string", "null"],
+      "description": "Predicted vs actual severity; pattern knowledge update. Optional for the first pass."
+    }
+  }
+}

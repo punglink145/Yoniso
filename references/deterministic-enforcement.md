@@ -13,16 +13,22 @@ The skill **guides** Claude's behavior. It does not **guarantee** it.
 
 ### CANNOT DO (Requires External Tooling)
 
-Yoniso as a skill cannot:
+As a pure prompt, Yoniso cannot enforce itself. The repo now ships tooling that
+closes most of this gap (see "Now enforced" below); what remains external:
 
-- Block a commit if the why-chain is too shallow
-- Verify that severity was classified from signals
-- Validate that all 4 quality gates were checked
-- Prevent Claude from skipping the post-fix feedback step
+**Now enforced (via `scripts/validate_yoniso_output.py` + Stop hook):**
+- Block a turn if the why-chain is too shallow (R_CHAIN_DEPTH + exit 2)
+- Verify severity was classified from signals (R_SEVERITY_CONSISTENCY)
+- Validate the 4 quality gates per layer (R_LAYER_SPECIFIC/CAUSAL/NOVEL/ACTIONABLE)
+- Require an action-first fix and a verification step
+
+**Still requires human/CI process (not prompt-enforceable):**
+- Prevent skipping the post-fix feedback step (the field is optional in v1)
 - Enforce that known-pattern instances were all grep'd and fixed
+- Reject a plausible-but-wrong root cause (the validator checks shape, not truth)
 
-These require **deterministic enforcement** — external scripts, hooks, or CI
-that run regardless of what the language model outputs.
+These need **deterministic enforcement** beyond a single turn — repo-wide
+greps, protected branches, and human review.
 
 ---
 
@@ -52,27 +58,46 @@ Use the included `.github/workflows/ci.yml` which runs:
 
 Add branch protection rules in GitHub to require CI green before merge.
 
-### Option 3: Claude Code Hooks
+### Option 3: Claude Code Hooks (Runtime Output Validation)
 
-Claude Code supports hooks in `.claude/settings.json`. Example hook that runs
-the validator before commits:
+Claude Code hooks live in `.claude/settings.json`. **There is no `PreCommit`
+hook event in Claude Code** — the real hook events are `PreToolUse`,
+`PostToolUse`, `UserPromptSubmit`, `Stop`, `SubagentStop`, `Notification`,
+`SessionStart`, `SessionEnd`, and `PreCompact`. "Run something before a git
+commit" is a **git** hook (Option 1), not a Claude Code event.
+
+The Claude Code hook that fits Yoniso is `Stop` — it fires after Claude
+finishes a turn and receives `last_assistant_message` on stdin, so a validator
+can check whether the output actually follows the Yoniso contract (severity
+classified from signals, min why-layers, 4 quality gates, action-first):
 
 ```json
 {
   "hooks": {
-    "PreCommit": [
+    "Stop": [
       {
-        "matcher": "SKILL.md",
-        "command": "python scripts/validate_skill.py"
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/validate_yoniso_output.py"
+          }
+        ]
       }
     ]
   }
 }
 ```
 
-This is only relevant for the Yoniso repo itself (skill development). For
-projects using Yoniso, the skill is consumed as a prompt — hooks are for the
-consuming project's own enforcement needs.
+A `Stop` hook can block continuation by exiting with code 2 and feeding a
+reason back to Claude on stderr. This is the deterministic runtime gate the
+skill alone cannot provide — the prompt *guides*, the hook *enforces*.
+
+> NOTE: `scripts/validate_yoniso_output.py` is a proposed addition (see §below).
+> It validates runtime output, unlike `scripts/validate_skill.py` which only
+> validates the SKILL.md *file* structure.
+>
+> Refs: https://code.claude.com/docs/en/hooks · https://code.claude.com/docs/en/hooks-guide
 
 ### Option 4: Code Review Checklist
 

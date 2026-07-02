@@ -185,22 +185,27 @@ Test/Guard Needed: [how to prevent recurrence]
 
 ---
 
-## §8. Deterministic Enforcement
+## §8. Deterministic Enforcement (implemented)
 
-This skill provides **prompt-level behavioral guidance.** It cannot force Claude
-Code to perform checks or block commits.
+The skill prompt **guides**; deterministic tooling **enforces**. Two layers
+ship in this repo:
 
-For hard enforcement, add:
-- **Validator script:** `scripts/validate_skill.py` — validates SKILL.md structure
-- **CI:** `.github/workflows/ci.yml` — runs validator + tests on push/PR
-- **Claude Code hooks:** configure in `.claude/settings.json` to run validators
-  before commits (see `references/deterministic-enforcement.md`)
-- **Code review checklist:** add Yoniso gates to PR templates
-- **Protected branch checks:** require CI green before merge
+**File-level** — validates the skill itself:
+- `scripts/validate_skill.py` — validates SKILL.md structure
+- `.github/workflows/ci.yml` — runs the file validator + tests on push/PR
 
-The severity tables and quality gates in this skill guide Claude's output. They
-do not guarantee Claude will apply them. For critical systems, combine with
-deterministic tooling.
+**Runtime-level** — validates the model's OUTPUT follows the contract:
+- `schemas/yoniso-output.schema.json` — machine-readable output contract
+- `scripts/validate_yoniso_output.py` — checks severity-from-signal, min
+  why-layers, the 4 quality gates per layer, and action-first fix (exit 0/1)
+- `.claude/hooks/validate_yoniso_stop.py` + `.claude/settings.example.json`
+  — Claude Code `Stop` hook that blocks a turn (exit 2) when the emitted
+  assessment fails the contract, feeding the failing rules back to the model
+- `tests/fixtures/yoniso_outputs/{pass,fail}/*.md` — golden samples
+
+The severity tables and quality gates in this skill guide Claude's output; the
+tools above enforce them at runtime. For critical systems, combine with
+protected branches and human review. See `references/deterministic-enforcement.md`.
 
 ---
 

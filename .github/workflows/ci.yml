@@ -19,8 +19,22 @@ jobs:
       - name: Install dependencies
         run: pip install pytest
 
-      - name: Validate SKILL.md
+      - name: Validate SKILL.md (file structure)
         run: python scripts/validate_skill.py
+
+      - name: Validate runtime output (fixtures)
+        run: |
+          # Pass fixtures must exit 0; fail fixtures must be rejected (exit 1).
+          ok=0
+          for f in tests/fixtures/yoniso_outputs/pass/*.md; do
+            python scripts/validate_yoniso_output.py --file "$f" --quiet || { echo "expected PASS: $f"; ok=1; }
+          done
+          for f in tests/fixtures/yoniso_outputs/fail/*.md; do
+            python scripts/validate_yoniso_output.py --file "$f" --quiet >/dev/null 2>&1 \
+              && { echo "expected FAIL but passed: $f"; ok=1; } \
+              || true
+          done
+          exit $ok
 
       - name: Run tests
         run: python -m pytest -q

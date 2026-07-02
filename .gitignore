@@ -6,3 +6,9 @@ __pycache__/
 .venv/
 venv/
 .env
+
+# meta-harness run logs (local only)
+.mh_*.log
+
+# Claude Code local settings (consumer-specific; track only the .example)
+.claude/settings.json

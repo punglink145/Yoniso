@@ -1,0 +1,17 @@
+{
+  "_comment": "Copy to .claude/settings.json (or merge into your existing hooks) to enforce Yoniso at runtime. The Stop hook reads the transcript, finds the last assistant turn, and only blocks when that turn claims to be a Yoniso assessment but fails the contract. Requires python on PATH. See references/deterministic-enforcement.md.",
+  "_install": "1) cp .claude/settings.example.json .claude/settings.json   2) ensure scripts/validate_yoniso_output.py + .claude/hooks/validate_yoniso_stop.py are present   3) restart Claude Code",
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/validate_yoniso_stop.py"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -24,7 +24,7 @@ YONISO เกิดจาก agent ชอบแก้บั๊กแบบ surfa
 | 02 Jun 2026 | ADR-022 APPROVED (Triad 2-of-3) — 9arm enforcement activated |
 | 02 Jun 2026 | First yoniso commit — closed root-causes from scheduler audit |
 | 05 Jun 2026 | **v3.0.0** — signal-based auto-classification + 4-point layer quality heuristics |
-| 08 Jun 2026 | **v3.1.0** — production-grade: validator, CI, 22 tests, progressive disclosure |
+| 08 Jun 2026 | **v3.1.0** — production-grade: validator, CI, 23 tests, progressive disclosure |
 
 **DNA:** YONISO is the only **LMA-native** skill among the 5 in the 9ARM bundle — purpose-built for enforcing recursive root questioning, not ported from existing skills.
 
@@ -123,6 +123,26 @@ For details, see `SKILL.md` and `references/`.
 
 ---
 
+## What's New — Runtime Enforcement (v3.2.0)
+
+The skill prompt **guides**; now the repo also **enforces**. New deterministic
+runtime layer ships alongside the existing file validator:
+
+- **`schemas/yoniso-output.schema.json`** — machine-readable output contract
+- **`scripts/validate_yoniso_output.py`** — validates the model's emitted
+  assessment: severity-from-signal, min why-layers (severity-derived), the 4
+  quality gates per layer, action-first fix (exit 0 pass / 1 fail, `--json`)
+- **`.claude/hooks/validate_yoniso_stop.py` + `.claude/settings.example.json`**
+  — Claude Code `Stop` hook that blocks a turn (exit 2) when the output fails
+  the contract, feeding the failing rules back to the model
+- **`tests/fixtures/yoniso_outputs/{pass,fail}/*.md`** — golden samples the CI
+  checks both directions
+
+`validate_skill.py` still checks the SKILL.md *file*; `validate_yoniso_output.py`
+checks the *output* a model produces. The two are complementary.
+
+---
+
 ## What's New in v3.1.0
 
 - **Valid YAML frontmatter** — fixed colon-in-description parse error
@@ -155,13 +175,22 @@ Yoniso/
 │   ├── templates.md                      # Copy-paste output templates
 │   ├── examples.md                       # Worked examples (LOW→CRITICAL)
 │   └── deterministic-enforcement.md      # Hooks/CI/validator strategy
+├── schemas/
+│   └── yoniso-output.schema.json         # Machine-readable output contract
 ├── scripts/
-│   └── validate_skill.py                 # SKILL.md structural validator
+│   ├── validate_skill.py                 # SKILL.md structural validator
+│   └── validate_yoniso_output.py         # Runtime output validator
+├── .claude/
+│   ├── hooks/
+│   │   └── validate_yoniso_stop.py       # Claude Code Stop hook
+│   └── settings.example.json             # Copy to settings.json to activate
 ├── tests/
 │   ├── test_skill_structure.py           # Structural tests
-│   └── test_skill_content.py             # Content tests
+│   ├── test_skill_content.py             # Content tests
+│   ├── test_yoniso_output_validator.py   # Runtime validator tests
+│   └── fixtures/yoniso_outputs/{pass,fail}/*.md  # Golden samples
 └── .github/workflows/
-    └── ci.yml                            # CI: validator + pytest
+    └── ci.yml                            # CI: file validator + runtime validator + pytest
 ```
 
 ---
